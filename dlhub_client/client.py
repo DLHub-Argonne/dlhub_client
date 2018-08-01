@@ -197,3 +197,96 @@ class DLHub():
             str, str (if info=True): the shape of the output and the output description
         """
         return self.get_input_info(name, index=index, info=info, output=True)
+
+    def match_years(self, years=None, start=None, stop=None, inclusive=True):
+        """Add years and limits to the query.
+        Args:
+            years   (int or string, or list of int or strings): The years to match.
+                    Note that this argument overrides the start, stop, and inclusive arguments.
+            start   (int or string): The lower range of years to match.
+            stop    (int or string): The upper range of years to match.
+            inclusive (bool): If **True**, the start and stop values will be included in the search.
+                    If **False**, they will be excluded.
+                    Default **True**.
+        Returns:
+            self (DLHub): For chaining.
+        """
+        # If nothing supplied, nothing to match
+        if years is None and start is None and stop is None:
+            return self
+
+        if years is not None and years != []:
+            if not isinstance(years, list):
+                years = [years]
+            years_int = []
+            for year in years:
+                try:
+                    y_int = int(year)
+                    years_int.append(y_int)
+                except ValueError:
+                    print("Invalid year: '{}'".format(year))
+                    #print("Invalid year: '", year, "'", sep="")
+
+            # Only match years if valid years were supplied
+            if len(years_int) > 0:
+                self.match_field(field="datacite.publicationYear", value=years_int[0], required=True,
+                                 new_group=True)
+                for year in years_int[1:]:
+                    self.match_field(field="datacite.publicationYear",
+                                     value=year, required=False, new_group=False)
+        else:
+            if start is not None:
+                try:
+                    start = int(start)
+                except ValueError:
+                    print("Invalid start year: '", start, "'", sep="")
+                    start = None
+            if stop is not None:
+                try:
+                    stop = int(stop)
+                except ValueError:
+                    print("Invalid stop year: '", stop, "'", sep="")
+                    stop = None
+
+            self.match_range(field="datacite.publicationYear", start=start, stop=stop,
+                             inclusive=inclusive, required=True, new_group=True)
+        return self
+
+    def match_range(self, field, start="*", stop="*", inclusive=True,
+                    required=True, new_group=False):
+        """Add a field:[some range] term to the query.
+        Matches will have field == value in range.
+        Args:
+            field (str): The field to check for the value.
+                    The field must be namespaced according to Elasticsearch rules using
+                    the dot syntax.
+                    Ex. "dlhub.domain" is the "domain" field of the "dlhub" dictionary.
+            start (str or int): The starting value. "*" is acceptable to make no lower bound.
+            stop (str or int): The ending value. "*" is acceptable to have no upper bound.
+            inclusive (bool): If **True**, the start and stop values will be included
+                    in the search.
+                    If **False**, the start and stop values will not be included
+                    in the search.
+            required (bool): If **True**, will add term with AND. If **False**, will use OR.
+                    Default **True**.
+            new_group (bool): If **True**, will separate term into new parenthetical group.
+                    If **False**, will not.
+                    Default **False**.
+        Returns:
+            self (DLHub): For chaining.
+        """
+        # Accept None as *
+        if start is None:
+            start = "*"
+        if stop is None:
+            stop = "*"
+        # No-op on *-*
+        if start == "*" and stop == "*":
+            return self
+
+        if inclusive:
+            value = "[" + str(start) + " TO " + str(stop) + "]"
+        else:
+            value = "{" + str(start) + " TO " + str(stop) + "}"
+        self.match_field(field, value, required=required, new_group=new_group)
+        return self
