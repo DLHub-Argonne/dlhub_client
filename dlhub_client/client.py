@@ -14,12 +14,16 @@ SEARCH_INDEX_UUIDS = {
 
 class DLHub():
     service = "http://dlhub.org:5000/api/v1"
-    __default_index = SEARCH_INDEX_UUIDS["dlhub-test"] # Change to dlhub after test stage
+    __default_index = "dlhub-test" # Change to dlhub after test stage
 
     def __init__(self, index=__default_index):
         self.index = index
         self.__search_client = mdf_toolbox.login(services=["search_ingest"])["search_ingest"]
         self.__query = Query(self.__search_client)
+
+    @property
+    def search_client(self):
+        return self.__search_client
 
     def get_servables(self):
         r = requests.get("{service}/servables".format(service=self.service), timeout=10)
