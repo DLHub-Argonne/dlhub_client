@@ -12,7 +12,9 @@ setup(
     install_requires=[
         "pandas",
         "requests>=2.18.4",
-        "ipywidgets"
+        "ipywidgets",
+        "mdf_toolbox>=0.2.5",
+        "mdf_forge>=0.6.3"
     ],
     python_requires=">=3.4",
     classifiers=[

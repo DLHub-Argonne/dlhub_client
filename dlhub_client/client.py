@@ -1,8 +1,8 @@
 import requests
 import pandas as pd
 import ipywidgets
-import mdf_toolbox # Delete comment after adding mdf_toolbox to requirements
-from mdf_forge.forge import Query # Delete comment after adding mdf_toolbox to requirements
+import mdf_toolbox
+from mdf_forge.forge import Query
 
 # Maximum number of results per search allowed by Globus Search
 SEARCH_LIMIT = 10000
@@ -14,9 +14,10 @@ SEARCH_INDEX_UUIDS = {
 
 class DLHub():
     service = "http://dlhub.org:5000/api/v1"
-    index = SEARCH_INDEX_UUIDS["dlhub-test"] # Change to dlhub after test stage
+    __default_index = SEARCH_INDEX_UUIDS["dlhub-test"] # Change to dlhub after test stage
 
-    def __init__(self):
+    def __init__(self, index=__default_index):
+        self.index = index
         self.__search_client = mdf_toolbox.login(services=["search_ingest"])["search_ingest"]
         self.__query = Query(self.__search_client)
 
@@ -104,13 +105,14 @@ class DLHub():
     def search_by_domain(self, domain, index=None, limit=None, info=False):
         """Discover models based on the domain of the work,
         Args:
-            domain (str): The domain to match againstself.
+            domain (list or str): The domain(s) to match against
             Ex. "image recognition"
 
         Returns:
             Query results from Globus Search
         """
-        space = " "
+        # NOTE: Remove below after testing
+        """space = " "
         if not isinstance(domain, str):
             raise ValueError("The input domain must be a str")
         domain.strip(space) # Can't lead or end with space
@@ -120,7 +122,21 @@ class DLHub():
 
         #domain.replace(" ", "\ ")
         self.match_field(field="dlhub.domain", value=domain)
+        return self.search(index=index, limit=limit, info=info)"""
+        if isinstance(domain, str):
+            domain = [domain]
+        if not isinstance(domain, list):
+            raise ValueError("The input domain must be a list or str")
+
+        # First source should be in new group and required
+        self.match_field(field="dlhub.domain", value=domain[0], required=True, new_group=True)
+        # Other sources should stay in that group, and not be required
+        for d in domain[1:]:
+            self.match_field(field="dlhub.domain", value=d, required=False, new_group=False)
+
         return self.search(index=index, limit=limit, info=info)
+
+
 
     def search_by_titles(self, titles, index=None, limit=None, info=False):
         """Add titles to the query.
