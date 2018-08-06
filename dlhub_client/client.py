@@ -1,24 +1,36 @@
 import requests
 import pandas as pd
-import ipywidgets
 import mdf_toolbox
 from mdf_forge.forge import Query
 
 # Maximum number of results per search allowed by Globus Search
 SEARCH_LIMIT = 10000
 
-SEARCH_INDEX_UUIDS = {
-    "dlhub": "847c9105-18a0-4ffb-8a71-03dd76dfcc9d",
-    "dlhub-test": "5c89e0a9-00e5-4171-b415-814fe4d0b8af"
-}
 
 class DLHub():
+    """Fetch metadata from Globus Search and run predictions on models.
+    DLHub is intended to be the best way to access DLHub models for all users.
+
+    **Public Variables**
+        * **service** is the location of the DLHub service.
+        * **index** is the Globus Search index to be used.
+    """
     service = "http://dlhub.org:5000/api/v1"
     __default_index = "dlhub-test" # Change to dlhub after test stage
 
-    def __init__(self, index=__default_index):
+    def __init__(self, index=__default_index, anonymous=False):
+        """**Initialize the DLHub instance.**
+        Args:
+            index (str): The Globus Search index to search on. Default "dlhub-test".
+            anonymous (bool): If **True**, will not authenticate with Globus Auth.
+                    If **False**, will require authentication.
+        """
         self.index = index
-        self.__search_client = mdf_toolbox.login(services=["search_ingest"])["search_ingest"]
+        if anonymous:
+            sc = mdf_toolbox.anonymous_login(services=["search"])["search"]
+        else:
+            sc = mdf_toolbox.login(services=["search"])["search"]
+        self.__search_client = sc
         self.__query = Query(self.__search_client)
 
     @property
@@ -26,19 +38,37 @@ class DLHub():
         return self.__search_client
 
     def get_servables(self):
+        """Return all live models and their details.
+        Returns:
+            (Pandas DataFrame): All servables
+        """
         r = requests.get("{service}/servables".format(service=self.service), timeout=10)
         return pd.DataFrame(r.json())
 
     def get_id_by_name(self, name):
-        r = requests.get("{service}/servables".format(service=self.service), timeout=10)
-        df_tmp =  pd.DataFrame(r.json())
+        """Return uuid of the model.
+        Args:
+            name (str): The name of the Model to be searched on
+        Returns:
+            (str): The uuid of the corresponding to the specified model
+        """
+        df_tmp = self.get_servables()
         serv = df_tmp[df_tmp.name==name]
         return serv.iloc[0]['uuid']
 
     def run(self, servable_id, data):
+        """Run a prediciton on a model with specified data.
+        Args:
+            servable_id (str): The uuid of the desired model.
+            data (type depends on model invoked): The user data to be predicted on.
+        Returns:
+            (Pandas DataFrame): The result of the prediction
+        """
         servable_path = '{service}/servables/{servable_id}/run'.format(service=self.service,
                                                                        servable_id=servable_id)
-        payload = {"data":data}
+        # NOTE: Revisit on if client should manually set data as {"data":data}
+        # or if dlhub_client should automatically format it to {"data":data}
+        # payload = {"data":data}
 
         r = requests.post(servable_path, json=data)
         if r.status_code is not 200:
@@ -109,24 +139,12 @@ class DLHub():
     def search_by_domain(self, domain, index=None, limit=None, info=False):
         """Discover models based on the domain of the work,
         Args:
-            domain (list or str): The domain(s) to match against
+            domain (str or list of str): The domain(s) to match against
             Ex. "image recognition"
 
         Returns:
             Query results from Globus Search
         """
-        # NOTE: Remove below after testing
-        """space = " "
-        if not isinstance(domain, str):
-            raise ValueError("The input domain must be a str")
-        domain.strip(space) # Can't lead or end with space
-
-        if not len(domain) > 0:
-            raise ValueError("A domain must be specified.")
-
-        #domain.replace(" ", "\ ")
-        self.match_field(field="dlhub.domain", value=domain)
-        return self.search(index=index, limit=limit, info=info)"""
         if isinstance(domain, str):
             domain = [domain]
         if not isinstance(domain, list):
@@ -150,7 +168,7 @@ class DLHub():
             self (DLHub): For chaining.
         """
         if not titles:
-            raise ValueError("At least one title must be specified")
+            return self.search(index=index, limit=limit, info=info)
 
         if not isinstance(titles, list):
             titles = [titles]
@@ -170,7 +188,7 @@ class DLHub():
         self.__query = Query(self.__search_client)
 
     def get_input_info(self, name, index=None, info=False, output=False):
-        """
+        """Return model information.
         Args:
             name (str): Source name of the models
             index (str): The Globus Search index to search on. Defaults to the current index.
@@ -182,10 +200,13 @@ class DLHub():
             str, str (if info=True): the shape of the input (or output)
             and the input (or output) description
         """
+        if not isinstance(name, str):
+            raise ValueError("Model name must be a str. Instead got type: '{}''".format(type(name)))
+
         hits = self.match_field(field="servable.name", value=name).search(index=index)
 
         if hits == []: # No model found
-            raise ValueError("No such model found: {}".format(name))
+            raise ValueError("No such model found: '{}'".format(name))
 
         elif len(hits) > 1:
             raise ValueError("Unexpectedly matched multiple models with name '{}'. "
@@ -245,7 +266,6 @@ class DLHub():
                     years_int.append(y_int)
                 except ValueError:
                     print("Invalid year: '{}'".format(year))
-                    #print("Invalid year: '", year, "'", sep="")
 
             # Only match years if valid years were supplied
             if len(years_int) > 0:
