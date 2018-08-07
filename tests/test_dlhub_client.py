@@ -161,6 +161,28 @@ def test_match_field():
     res4 = dl.match_field("foo", "bar").search()
     assert res4 == []
 
+def test_exclude_field():
+    dl = client.DLHub()
+
+    # No entry
+    res1 = dl.exclude_field("", "").search()
+    assert res1 == []
+    dl.match_field(field="datacite.publicationYear", value=2018)
+    compare_res = dl.search(reset_query=False)
+    res2 = dl.exclude_field("", "").search(reset_query=False)
+    assert len(res2) == len(compare_res)
+
+    # Not a true field
+    res3 = dl.exclude_field("fake field", "fake value").search()
+    assert len(res3) == len(compare_res)
+
+    # Basic usage
+    dl.match_field(field="datacite.publicationYear", value=2018)
+    res4 = dl.exclude_field(field="dlhub.domain", value="image recognition").search()
+    assert len(res4) < len(compare_res)
+    assert check_field(res4, "dlhub.domain", "image recognition") == -1
+    assert check_field(res4, "datacite.publicationYear", 2018) == 0
+
 def test_search_by_domain():
     dl = client.DLHub()
     # Empty domain shouldn't change return anything

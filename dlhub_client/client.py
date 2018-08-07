@@ -127,6 +127,9 @@ class DLHub():
         Returns:
             self (DLHub): For chaining.
         """
+        # Must have something to match
+        if field == "" or value == "":
+            return self
         # If not the start of the query string, add an AND or OR
         if self.__query.initialized:
             if required:
@@ -134,6 +137,31 @@ class DLHub():
             else:
                 self.__query.or_join(new_group)
         self.__query.field(str(field), str(value))
+        return self
+
+    def exclude_field(self, field, value, new_group=False):
+        """Exclude a field:value term from the query.
+        Matches will NOT have field == value.
+        Args:
+            field (str): The field to check for the value.
+                    The field must be namespaced according to Elasticsearch rules
+                    using the dot syntax.
+                    Ex. "dlhub.domain" is the "domain" field of the "dlhub" dictionary.
+            value (str): The value to exclude.
+            new_group (bool): If **True**, will separate term into new parenthetical group.
+                    If **False**, will not.
+                    Default **False**.
+        Returns:
+            self (DLHub): For chaining.
+        """
+        # Must have something to exclude
+        if field == "" or value == "":
+            return self
+        # If not the start of the query string, add an AND
+        # OR would not make much sense for excluding
+        if self.__query.initialized:
+            self.__query.and_join(new_group)
+        self.__query.negate().field(str(field), str(value))
         return self
 
     def search_by_domain(self, domain, index=None, limit=None, info=False):
