@@ -296,9 +296,7 @@ def test_match_years(capsys):
     # Multiple years
     res2 = dl.match_years(["2017", 2018]).search()
     assert res2 != []
-    # NOTE: Uncomment this test when multiple model years
-    # NOTE: have been ingested into search
-    # assert check_field(res2, "datacite.publicationYear", 2017) == 2
+    assert check_field(res2, "datacite.publicationYear", 2017) == 2
 
     # Range of years
     res3 = dl.match_years(start=2018, stop=2018, inclusive=True).search()
@@ -306,8 +304,7 @@ def test_match_years(capsys):
 
     res4 = dl.match_years(start=2014, stop=2018, inclusive=True).search()
     assert check_field(res4, "datacite.publicationYear", 2015) == -1
-    # NOTE: Change to == 1 once other years have been ingested into dlhub
-    assert check_field(res4, "datacite.publicationYear", 2018) == 0
+    assert check_field(res4, "datacite.publicationYear", 2018) == 2
 
     res5 = dl.match_years(start=2018, stop=2018, inclusive=False).search()
     assert res5 == []
@@ -320,8 +317,7 @@ def test_match_range():
 
     res2 = dl.match_range(field="datacite.publicationYear", start=2014, stop=2018, inclusive=True).search()
     assert check_field(res2, "datacite.publicationYear", 2015) == -1
-    # NOTE: Change to == 2 once other years have been ingested into dlhub
-    assert check_field(res2, "datacite.publicationYear", 2018) == 0
+    assert check_field(res2, "datacite.publicationYear", 2018) == 2
 
     res3 = dl.match_range(field="datacite.publicationYear", start=2018, stop=2018, inclusive=False).search()
     assert res3 == []
@@ -330,15 +326,13 @@ def test_match_range():
     res4 = dl.match_range(field="datacite.publicationYear", start=None, stop=2018, inclusive=True).search()
     assert res4 != []
     assert check_field(res4, "datacite.publicationYear", 100) == -1
-    # NOTE: Change to == 2 once other years have been ingested into dlhub
-    assert check_field(res4, "datacite.publicationYear", 2018) == 0
+    assert check_field(res4, "datacite.publicationYear", 2018) == 2
 
     # No upper bound
     res5 = dl.match_range(field="datacite.publicationYear", start=2010, stop=None, inclusive=True).search()
     assert res5 != []
     assert check_field(res5, "datacite.publicationYear", 2000) == -1
-    # NOTE: Change to == 2 once other years have been ingested into dlhub
-    assert check_field(res4, "datacite.publicationYear", 2018) == 0
+    assert check_field(res4, "datacite.publicationYear", 2018) == 2
 
     res6 = dl.match_range(field="datacite.publicationYear", start=2100, stop=None, inclusive=True).search()
     assert res6 == []
