@@ -2,7 +2,7 @@
 
 DLHub-Client is the python package for leveraging the DLHub service. DLHub Client allows users to easily access machine learning and deep learning models to facilitate scientific discovery.
 
-# Installation
+## Installation
 ```
 pip install dlhub_client
 ```
@@ -14,7 +14,7 @@ cd dlhub_client
 pip install -e .
 ```
 
-### Examples
+## Examples
 ```python
 from dlhub_client import client
 
