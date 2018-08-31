@@ -1,4 +1,5 @@
 # DLHub Client
+[![Build Status](https://travis-ci.org/DLHub-Argonne/dlhub_client.svg?branch=master)](https://travis-ci.org/DLHub-Argonne/dlhub_client)
 
 Client to simplify interacting with the DLHub service. 
 Provides helpful tools for operations such as publishing a new model to DLHub, 
