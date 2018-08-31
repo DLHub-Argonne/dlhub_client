@@ -4,7 +4,7 @@ import pandas as pd
 
 class DLHub:
     """Main class for interacting with the DLHub service"""
-    service = "http://dlhub.org:5000/api/v1"
+    service = "https://dlhub.org/api/v1"
     
     def __init__(self):
         pass
