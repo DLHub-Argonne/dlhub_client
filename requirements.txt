@@ -1,3 +1,2 @@
-pandas
-requests
-ipywidgets
+pandas==0.22.0
+requests==2.18.4

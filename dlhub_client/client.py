@@ -1,14 +1,16 @@
 import requests
 import pandas as pd
-import ipywidgets
 
-class DLHub():
+
+class DLHub:
+    """Main class for interacting with the DLHub service"""
     service = "http://dlhub.org:5000/api/v1"
     
     def __init__(self):
         pass
     
     def get_servables(self):
+        """Get a list of the servables available in the service"""
         r = requests.get("{service}/servables".format(service=self.service))
         return pd.DataFrame(r.json())
     
@@ -21,7 +23,7 @@ class DLHub():
     def run(self, servable_id, data):
         servable_path = '{service}/servables/{servable_id}/run'.format(service=self.service,
                                                                        servable_id=servable_id)
-        payload = {"data":data}
+        payload = {"data": data}
 
         r = requests.post(servable_path, json=data)
         if r.status_code is not 200:

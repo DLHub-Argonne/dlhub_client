@@ -10,9 +10,8 @@ setup(
                      " machine learning and deep learning models"
                      " to facilitate scientific discovery."),
     install_requires=[
-        "pandas",
+        "pandas>=0.22.0",
         "requests>=2.18.4",
-        "ipywidgets"
     ],
     python_requires=">=3.4",
     classifiers=[
