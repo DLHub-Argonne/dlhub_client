@@ -1,3 +1,4 @@
+from dlhub_toolbox.models.servables.python import PythonStaticMethodModel
 import dlhub_client.client as client
 import pandas
 import pytest
@@ -39,3 +40,16 @@ def test_run():
 
     # Check the results
     assert isinstance(res, pandas.DataFrame)
+
+
+def test_submit():
+    dl = client.DLHub()
+
+    # Make an example function
+    model = PythonStaticMethodModel('numpy.linalg', 'norm')
+    model.set_title('Numpy ')
+    model.set_inputs('ndarray', 'Array to be normed', shape=(None,))
+    model.set_outputs('number', 'Norm of the array')
+
+    # Submit the model
+    dl.submit_servable(model)

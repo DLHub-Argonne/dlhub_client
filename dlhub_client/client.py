@@ -1,5 +1,9 @@
-import requests
+from dlhub_toolbox.utils.schemas import validate_against_dlhub_schema
+from tempfile import mkstemp
 import pandas as pd
+import requests
+import uuid
+import os
 
 
 class DLHub:
@@ -47,3 +51,44 @@ class DLHub:
         if r.status_code is not 200:
             raise Exception(r)
         return pd.DataFrame(r.json())
+
+    def submit_servable(self, model):
+        """Submit a servable to DLHub
+
+        If this servable has not been published before, it will be assigned a unique identifier.
+
+        If it has been published before (DLHub detects if it has an identifier), then DLHub
+        will update the model to the new version.
+
+        Args:
+            model (BaseMetadataModel): Model to be submitted
+        Returns:
+            (string) Task ID of this submission, used for checking for success
+        """
+
+        # If unassigned, give the model a UUID
+        if model.dlhub_id is None:
+            model.set_dlhub_id(str(uuid.uuid1()))
+
+        # Get the metadata
+        metadata = model.to_dict()
+
+        # Validate against the servable schema
+        validate_against_dlhub_schema(metadata, 'servable')
+
+        # Get the data to be submitted as a ZIP file
+        fp, zip_filename = mkstemp('.zip')
+        os.close(fp)
+        os.unlink(zip_filename)
+        try:
+            model.get_zip_file(zip_filename)
+
+            # Submit data to DLHub service
+            with open(zip_filename, 'rb') as zf:
+                req = requests.post('{service}/publish'.format(service=self.service), json=metadata,
+                                    files={'files': zf})
+
+            # Return the task id
+            return req.json()['task_id']
+        finally:
+            os.unlink(zip_filename)

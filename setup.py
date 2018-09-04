@@ -12,8 +12,12 @@ setup(
     install_requires=[
         "pandas>=0.22.0",
         "requests>=2.18.4",
+        "dlhub_toolbox"
     ],
     python_requires=">=3.4",
+    dependency_links=[
+        'git+https://github.com/dlhub-argonne/dlhub_toolbox.git#egg=dlhub_toolbox'
+    ],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
