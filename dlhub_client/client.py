@@ -71,7 +71,10 @@ class DLHub:
             model.set_dlhub_id(str(uuid.uuid1()))
 
         # Get the metadata
-        metadata = model.to_dict()
+        metadata = model.to_dict(simplify_paths=True)
+
+        # Mark the method used to submit the model
+        metadata['dlhub']['transfer_method'] = {'POST': 'file'}
 
         # Validate against the servable schema
         validate_against_dlhub_schema(metadata, 'servable')

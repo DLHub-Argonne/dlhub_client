@@ -47,8 +47,9 @@ def test_submit():
 
     # Make an example function
     model = PythonStaticMethodModel('numpy.linalg', 'norm')
-    model.set_title('Numpy ')
-    model.set_inputs('ndarray', 'Array to be normed', shape=(None,))
+    model.set_name('1d_norm')
+    model.set_title('Norm of a 1D Array')
+    model.set_inputs('ndarray', 'Array to be normed', shape=[None])
     model.set_outputs('number', 'Norm of the array')
 
     # Submit the model
