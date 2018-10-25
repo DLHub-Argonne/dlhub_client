@@ -83,15 +83,13 @@ class DLHub:
         # Get the metadata
         metadata = model.to_dict(simplify_paths=True)
 
-        # Mark the method used to submit the model
-        metadata['dlhub']['transfer_method'] = {'POST': 'file'}
-
         # Validate against the servable schema
         validate_against_dlhub_schema(metadata, 'servable')
 
         # Stage data for DLHub to access
         staged_path = self._stage_data(model)
-        metadata['dlhub']['location'] = staged_path
+        # Mark the method used to submit the model
+        metadata['dlhub']['transfer_method'] = {'S3': staged_path}
 
         # Publish to DLHub
         response = requests.post('{service}/publish'.format(service=self.service),
