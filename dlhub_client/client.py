@@ -22,6 +22,15 @@ class DLHub:
         r = requests.get("{service}/servables".format(service=self.service))
         return pd.DataFrame(r.json())
 
+    def get_task_status(self, task_id):
+        """Get the status of a task uuid
+
+        Returns:
+            (pd.DataFrame) Summary of all the models available in the service
+        """
+        r = requests.get("{service}/{task}/status".format(service=self.service, task=task_id))
+        return r.json()
+
     def get_id_by_name(self, name):
         """Get the ID of a DLHub servable by name
 
