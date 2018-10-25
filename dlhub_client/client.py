@@ -2,6 +2,7 @@ from dlhub_toolbox.utils.schemas import validate_against_dlhub_schema
 from tempfile import mkstemp
 import pandas as pd
 import requests
+import boto3
 import uuid
 import os
 
@@ -61,7 +62,7 @@ class DLHub:
             raise Exception(r)
         return pd.DataFrame(r.json())
 
-    def submit_servable(self, model):
+    def publish_servable(self, model):
         """Submit a servable to DLHub
 
         If this servable has not been published before, it will be assigned a unique identifier.
@@ -88,19 +89,45 @@ class DLHub:
         # Validate against the servable schema
         validate_against_dlhub_schema(metadata, 'servable')
 
-        # Get the data to be submitted as a ZIP file
+        # Stage data for DLHub to access
+        staged_path = self._stage_data(model)
+        metadata['dlhub']['location'] = staged_path
+
+        # Publish to DLHub
+        response = requests.post('{service}/publish'.format(service=self.service),
+                                 json=metadata)
+
+        task_id = response.json()['task_id']
+        return task_id
+
+    def _stage_data(self, servable):
+        """
+        Stage data to the DLHub service.
+
+        :param data_path: The data to upload
+        :return str: path to the data on S3
+        """
+        s3 = boto3.resource('s3')
+
+        # Generate a uuid to deposit the data
+        dest_uuid = str(uuid.uuid4())
+        dest_dir = 'servables/'
+        bucket_name = 'dlhub-anl'
+
         fp, zip_filename = mkstemp('.zip')
         os.close(fp)
         os.unlink(zip_filename)
+
         try:
-            model.get_zip_file(zip_filename)
+            servable.get_zip_file(zip_filename)
 
-            # Submit data to DLHub service
-            with open(zip_filename, 'rb') as zf:
-                req = requests.post('{service}/publish'.format(service=self.service), json=metadata,
-                                    files={'files': zf})
-
-            # Return the task id
-            return req.json()['task_id']
+            destpath = os.path.join(dest_dir, dest_uuid, zip_filename.split("/")[-1])
+            print("Uploading: {}".format(zip_filename))
+            res = s3.Object(bucket_name, destpath).put(ACL="public-read",
+                                                       Body=open(zip_filename, 'rb'))
+            staged_path = os.path.join("s3://", bucket_name, dest_dir, dest_uuid)
+            return staged_path
+        except Exception as e:
+            print("Publication error: {}".format(e))
         finally:
             os.unlink(zip_filename)
